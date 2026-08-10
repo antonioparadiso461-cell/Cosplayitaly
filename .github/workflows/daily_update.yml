@@ -1,0 +1,35 @@
+name: Daily Cosplay Blog Update
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Ogni giorno a mezzanotte
+  workflow_dispatch: # Permette l'avvio manuale
+
+jobs:
+  update-blog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install openai requests
+
+      - name: Run update script
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python update_blog.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "Cosplay Fan Bot"
+          git config --global user.email "bot@cosplayitaly.com"
+          git add .
+          git commit -m "Aggiornamento quotidiano: nuovo articolo e foto cosplay" || echo "Nessuna modifica da committare"
+          git push
