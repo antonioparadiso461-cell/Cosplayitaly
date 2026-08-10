@@ -1,0 +1,27 @@
+name: Monitor Cosplay Blog Update
+
+on:
+  schedule:
+    - cron: '30 0 * * *' # 30 minuti dopo l'aggiornamento previsto (00:30)
+  workflow_dispatch: # Permette l'avvio manuale
+
+jobs:
+  check-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run verification script
+        run: python verify_update.py
+
+      - name: Report Failure
+        if: failure()
+        run: |
+          echo "::error::L'aggiornamento automatico del blog è fallito o non è avvenuto in tempo."
+          # Qui si potrebbe aggiungere un invio email o notifica se configurato
