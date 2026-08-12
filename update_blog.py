@@ -2,6 +2,7 @@ import os
 import requests
 import datetime
 import time
+import json
 from openai import OpenAI
 
 # Configurazione
@@ -53,36 +54,28 @@ def generate_images():
 def update_script_js(content, image_paths):
     print("Aggiornamento script.js...")
     today = datetime.date.today().strftime("%d %B %Y")
-    images_html = "".join([f'<img src="{path}" alt="Cosplay">' for path in image_paths])
     
-    # Pulizia contenuto per HTML
     paragraphs = content.split('\n')
     title = paragraphs[0].strip('# ')
     body = "".join([f'<p>{p.strip()}</p>' for p in paragraphs[1:] if p.strip()])
     
-    new_post_html = f"""
-        <article>
-            <h2>{title}</h2>
-            <p><strong>Data:</strong> {today}</p>
-            {body}
-            <div class="cosplay-gallery">
-                {images_html}
-            </div>
-        </article>
-    """
+    new_post = {
+        "title": title,
+        "date": today,
+        "content": body,
+        "images": image_paths
+    }
     
     with open("script.js", "r") as f:
         js_content = f.read()
     
-    # Inseriamo il nuovo post prima di quello esistente
-    marker = 'const firstPost = `'
-    if marker in js_content:
-        parts = js_content.split(marker)
-        # Aggiungiamo il nuovo post alla variabile accumulata
-        updated_js = parts[0] + f"    const newPost_{int(time.time())} = `{new_post_html}`;\n    " + marker + parts[1]
-        
-        # Aggiorniamo la riga del container
-        updated_js = updated_js.replace('postsContainer.innerHTML = ', f'postsContainer.innerHTML = newPost_{int(time.time())} + ')
+    # Cerchiamo l'inizio dell'array blogPosts
+    start_marker = "const blogPosts = ["
+    if start_marker in js_content:
+        parts = js_content.split(start_marker)
+        # Inseriamo il nuovo post all'inizio dell'array
+        new_post_json = json.dumps(new_post, indent=8)
+        updated_js = parts[0] + start_marker + "\n        " + new_post_json + "," + parts[1]
         
         with open("script.js", "w") as f:
             f.write(updated_js)
